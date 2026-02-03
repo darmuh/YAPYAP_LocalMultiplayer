@@ -57,7 +57,7 @@ This mod requires you to create your own Photon cloud application. (This does no
 
 You must open your game at least once with the mod installed for the config file to get generated.
 
-This mod uses a global setting file so you don't have to configure your settings for each modpack/profile you use and to prevent your Photon App IDs from being transferred in your profile codes.
+This mod uses a global setting file so you don't have to configure your settings for each modpack/profile you use and to prevent your Photon App ID from being transferred in your profile codes.
 
 You can locate the setting file at this path:
 ```
