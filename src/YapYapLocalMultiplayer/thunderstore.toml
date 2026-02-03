@@ -5,10 +5,10 @@ schemaVersion = "0.0.1"
 repository = "https://thunderstore.io"
 
 [package]
-namespace = "TODO: Fill in your Thunderstore team name here"
-name = "YapYapLocalMultiplayer"
-description = "TODO: Fill in short mod description."
-websiteUrl = "" # TODO: Add a link to your mod repository here (optional)
+namespace = "darmuh"
+name = "LocalMultiplayer"
+description = "Connect multiple YAPYAP instances to the same multiplayer game using one Steam account"
+websiteUrl = "https://github.com/darmuh/YAPYAP_LocalMultiplayer"
 containsNsfwContent = false
 
 [package.dependencies]
@@ -37,9 +37,9 @@ target = "/"
 # See communities at:
 # https://thunderstore.io/api/experimental/community/
 # replace _ThunderstoreGameIdentifier_ with community name in this file
-communities = [ "_ThunderstoreGameIdentifier_", ]
+communities = [ "yapyap", ]
 
 [publish.categories]
 # See categories at:
-# https://thunderstore.io/api/experimental/community/_ThunderstoreGameIdentifier_/category/
-_ThunderstoreGameIdentifier_ = [ "mods", ]
+# https://thunderstore.io/api/experimental/community/yapyap/category/
+_ThunderstoreGameIdentifier_ = [ "mods", "tools" ]

@@ -4,7 +4,7 @@
 
 ## Features
 
-This mod allows you to connect two YAPYAP instances to the same multiplayer game using one Steam account.
+This mod allows you to connect multiple YAPYAP instances to the same multiplayer game using one Steam account.
 
 ## Usage
 
