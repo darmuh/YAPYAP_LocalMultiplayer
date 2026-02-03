@@ -1,0 +1,69 @@
+<Project>
+
+  <!-- Set additional NuGet sources -->
+  <PropertyGroup>
+    <RestoreAdditionalProjectSources>
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.windows10ce.com/nuget/v3/index.json
+    </RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <!-- Build dependencies -->
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
+    <PackageReference Include="Hamunii.BepInEx.AutoPlugin" Version="2.0.*" PrivateAssets="all" />
+    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Modding dependencies -->
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <!-- In reality BepInEx 5.4.21 ships HarmonyX 2.9 but BepInEx.Core gives us 2.7 -->
+    <PackageReference Include="HarmonyX" Version="2.9.0" />
+  </ItemGroup>
+
+  <!-- Local game references -->
+  <ItemGroup Condition="Exists('$(ManagedDir)')">
+    <LocalReferences
+      Include="$(ManagedDir)*.dll"
+      Exclude="$(ManagedDir)Mono*.dll;$(ManagedDir)netstandard.dll;$(ManagedDir)System*.dll;$(ManagedDir)mscorlib.dll"
+    />
+    <Reference Include="@(LocalReferences)" Private="false" />
+    <Reference Include="$(ManagedDir)Assembly-CSharp.dll" Private="false" Publicize="true" />
+	<Reference Include="$(ManagedDir)PhotonVoice.dll" Private="false" Publicize="true" />
+	  
+  </ItemGroup>
+
+  <!--
+    To make building Thunderstore packages uncoupled from release builds, swap
+    the positions of the commented out Target line:
+    <Target Name="PackTS" DependsOnTargets="Build" Condition="$(ThunderstorePackable) != 'false'">
+    and the one below.
+
+    With Thunderstore package builds being uncoupled from release builds,
+    build Thunderstore packages by calling `dotnet build -c Release -target:PackTS -v d` (verbosity detailed).
+
+    Publish to Thunderstore by including `-property:PublishTS=true` in the command.
+  -->
+  <Target Name="PackTS" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(ThunderstorePackable)' != 'false'">
+    <Error
+      Text=" PackTS must be called with Release configuration."
+      Condition="'$(Configuration)' != 'Release'"
+    />
+    <PropertyGroup>
+      <TS_API_TOKEN ></TS_API_TOKEN>
+      <BuildArgument Condition="'$(PublishTS)' != 'true'">build</BuildArgument>
+      <BuildArgument Condition="'$(PublishTS)' == 'true' And '$(TS_API_TOKEN)' != ''">publish --token $(TS_API_TOKEN)</BuildArgument>
+    </PropertyGroup>
+    <Exec Command="dotnet tool restore" />
+    <Exec Command="dotnet tcli $(BuildArgument) --package-version $(Version)" />
+  </Target>
+	
+  <Target Name="DeployFiles" AfterTargets="Build">
+    <Message Text="Deploy → $(PluginsDir)$(AssemblyName).dll" Importance="High" />
+    <Error Text="Plugins directory '$(PluginsDir)' doesn't exist!" Condition="!Exists('$(PluginsDir)')" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsDir)" />
+  </Target>
+	
+</Project>

@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <!-- Set if you want to override the game location path you set when creating the project -->
+    <!-- <GameLoc></GameLoc> -->
+    <!-- Set if your BepInEx/plugins/ directory isn't in the game files. -->
+    <!-- <PluginsDir></PluginsDir> -->
+	<!-- Set if you plan to use tcli to publish your mod to thunderstore. -->
+	<!-- On thunderstore, go to Settings > Teams > Team_Name > Service Accounts and create a new service account to get the API code -->
+	<!-- https://thunderstore.io/settings/teams/_TEAM_NAME_HERE/service-accounts/ -->
+	<!-- <TS_API_TOKEN></TS_API_TOKEN> -->
+	  
+	<!-- If using a local library, define the path to it below-->
+	<!-- <LocalLibPath></LocalLibPath> -->
+  </PropertyGroup>
+</Project>
