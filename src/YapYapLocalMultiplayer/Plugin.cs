@@ -16,6 +16,7 @@ namespace YapYapLocalMultiplayer
     {
         internal static ManualLogSource Log { get; private set; } = null!;
         internal static ConfigEntry<string> VoiceAppID = null!;
+        internal static ConfigEntry<KeyCode> ToggleNetworkUI = null!;
         private static string _voiceAppID = string.Empty;
         internal static string GetAppID
         {
@@ -54,12 +55,15 @@ namespace YapYapLocalMultiplayer
             }
         }
 
+        internal static UINetwork? UINetworkInstance { get; set; } = null;
+
         private void Awake()
         {
             Log = Logger;
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
             Log.LogMessage($"Plugin {Name} is loaded!");
             VoiceAppID = Config.Bind("Settings", "Voice App ID", "", new ConfigDescription("The App ID of your custom Photon Voice Application\nChanging this mid-game will require a return to main menu for changes to take effect"));
+            ToggleNetworkUI = Config.Bind("Settings", "Toggle NetworkDebug UI", KeyCode.Equals, new ConfigDescription("Set this to the key that you wish to use to toggle the Network Debug UI"));
         }
 
         private static bool TryGetAppID(out string appID)
@@ -82,12 +86,10 @@ namespace YapYapLocalMultiplayer
         [HarmonyPatch(typeof(CoreFsmYap), nameof(CoreFsmYap.Setup))]
         public class FsmYapHook
         {
-            internal static CoreFsmYap instance = null!;
             public static void Postfix(CoreFsmYap __instance)
             {
                 __instance._initSteam = false;
                 __instance._startHost = false;
-                instance = __instance;
             }
         }
 
@@ -96,7 +98,23 @@ namespace YapYapLocalMultiplayer
         {
             public static void Postfix(UINetwork __instance)
             {
+                UINetworkInstance = __instance;
                 Cursor.lockState = CursorLockMode.None;
+            }
+        }
+
+        [HarmonyPatch(typeof(UIPlayer), nameof(UIPlayer.Update))]
+        public class KeyListenerHook
+        {
+            public static void Postfix()
+            {
+                if (UINetworkInstance == null)
+                    return;
+
+                if (Input.GetKeyDown(ToggleNetworkUI.Value))
+                {
+                    UINetworkInstance.mainPanel.gameObject.SetActive(!UINetworkInstance.mainPanel.gameObject.activeSelf);
+                }
             }
         }
 

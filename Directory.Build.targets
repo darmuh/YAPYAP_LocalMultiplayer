@@ -52,7 +52,6 @@
       Condition="'$(Configuration)' != 'Release'"
     />
     <PropertyGroup>
-      <TS_API_TOKEN ></TS_API_TOKEN>
       <BuildArgument Condition="'$(PublishTS)' != 'true'">build</BuildArgument>
       <BuildArgument Condition="'$(PublishTS)' == 'true' And '$(TS_API_TOKEN)' != ''">publish --token $(TS_API_TOKEN)</BuildArgument>
     </PropertyGroup>
