@@ -43,6 +43,9 @@ This mod requires you to create your own Photon cloud application. (This does no
 
 ### 4. Testing
 
+> [!TIP]
+> If you are using a Linux-based operating system, it's recommended to use [Omniscye's launcher](https://github.com/Omniscye/EMPRESS-YAPYAP-Dual-Launcher-Linux-) to run multiple instances of the game.
+
 1. Open the game.
 2. Go to Options > Display.
 3. Set your Screen Mode to Windowed. (for easier testing)
@@ -66,6 +69,7 @@ You can locate the setting file at this path:
 
 ## Credits
 ZehsTeam for [REPO-LocalMultiplayer](https://github.com/ZehsTeam/REPO-LocalMultiplayer) (Used as inspiration for voice solution as well as README content)
+Omniscye for her work in [PR#2](https://github.com/darmuh/YAPYAP_LocalMultiplayer/pull/2) which fixed this mod's patching for the Feb 10th game update and also her [launcher for Linux-based systems]((https://github.com/Omniscye/EMPRESS-YAPYAP-Dual-Launcher-Linux-))
 
 ## Screenshots
 

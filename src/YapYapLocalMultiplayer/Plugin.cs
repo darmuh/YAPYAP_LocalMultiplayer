@@ -85,6 +85,7 @@ namespace YapYapLocalMultiplayer
             return true;
         }
 
+        //Thanks to Omniscye, this is her work https://github.com/darmuh/YAPYAP_LocalMultiplayer/pull/2
         [HarmonyPatch(typeof(YapFsm), nameof(YapFsm.Initialise))]
         public class FsmYapHook
         {
