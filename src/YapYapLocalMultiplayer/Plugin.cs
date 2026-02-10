@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -27,7 +29,7 @@ namespace YapYapLocalMultiplayer
                     Log.LogInfo($"Voice Server App ID replacement will be loaded from {VoiceAppPathID}");
                     if (TryGetAppID(out _voiceAppID))
                         Log.LogMessage($"Got Voice Server App ID of {_voiceAppID}");
-                    
+
                     return _voiceAppID;
                 }
                 else
@@ -83,13 +85,27 @@ namespace YapYapLocalMultiplayer
             return true;
         }
 
-        [HarmonyPatch(typeof(CoreFsmYap), nameof(CoreFsmYap.Setup))]
+        [HarmonyPatch(typeof(YapFsm), nameof(YapFsm.Initialise))]
         public class FsmYapHook
         {
-            public static void Postfix(CoreFsmYap __instance)
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                __instance._initSteam = false;
-                __instance._startHost = false;
+                var codes = new List<CodeInstruction>(instructions);
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (codes[i].opcode == OpCodes.Stfld)
+                    {
+                        var field = codes[i].operand as FieldInfo;
+                        if (field != null && (field.Name == "_initSteam" || field.Name == "_startHost"))
+                        {
+                            if (i > 0 && codes[i - 1].opcode == OpCodes.Ldc_I4_1)
+                            {
+                                codes[i - 1].opcode = OpCodes.Ldc_I4_0;
+                            }
+                        }
+                    }
+                }
+                return codes;
             }
         }
 
@@ -131,7 +147,7 @@ namespace YapYapLocalMultiplayer
                 }
 
                 PhotonAppSettings.instance = ScriptableObject.CreateInstance<PhotonAppSettings>();
-                PhotonAppSettings.instance.AppSettings = new()
+                PhotonAppSettings.instance.AppSettings = new Photon.Realtime.AppSettings()
                 {
                     AppIdVoice = appID,
                     AuthMode = Photon.Realtime.AuthModeOption.Auth,
@@ -142,8 +158,6 @@ namespace YapYapLocalMultiplayer
                 Log.LogMessage($"Photon Voice Server settings overwritten to use custom app id - {appID}");
                 return false;
             }
-
-            
         }
     }
 }
