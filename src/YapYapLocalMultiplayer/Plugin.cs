@@ -29,7 +29,7 @@ namespace YapYapLocalMultiplayer
                     Log.LogInfo($"Voice Server App ID replacement will be loaded from {VoiceAppPathID}");
                     if (TryGetAppID(out _voiceAppID))
                         Log.LogMessage($"Got Voice Server App ID of {_voiceAppID}");
-                    
+
                     return _voiceAppID;
                 }
                 else
@@ -66,21 +66,6 @@ namespace YapYapLocalMultiplayer
             Log.LogMessage($"Plugin {Name} is loaded!");
             VoiceAppID = Config.Bind("Settings", "Voice App ID", "", new ConfigDescription("The App ID of your custom Photon Voice Application\nChanging this mid-game will require a return to main menu for changes to take effect"));
             ToggleNetworkUI = Config.Bind("Settings", "Toggle NetworkDebug UI", KeyCode.Equals, new ConfigDescription("Set this to the key that you wish to use to toggle the Network Debug UI"));
-        }
-
-        private void Update()
-        {
-            if (UINetworkInstance == null)
-                return;
-
-            if (Input.GetKeyDown(ToggleNetworkUI.Value))
-            {
-                var mainPanelComp = Traverse.Create(UINetworkInstance).Field("mainPanel").GetValue<Component>();
-                if (mainPanelComp != null)
-                {
-                    mainPanelComp.gameObject.SetActive(!mainPanelComp.gameObject.activeSelf);
-                }
-            }
         }
 
         private static bool TryGetAppID(out string appID)
@@ -134,6 +119,21 @@ namespace YapYapLocalMultiplayer
             }
         }
 
+        [HarmonyPatch(typeof(UIPlayer), nameof(UIPlayer.Update))]
+        public class KeyListenerHook
+        {
+            public static void Postfix()
+            {
+                if (UINetworkInstance == null)
+                    return;
+
+                if (Input.GetKeyDown(ToggleNetworkUI.Value))
+                {
+                    UINetworkInstance.mainPanel.gameObject.SetActive(!UINetworkInstance.mainPanel.gameObject.activeSelf);
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(PhotonAppSettings), nameof(PhotonAppSettings.LoadOrCreateSettings))]
         public class BypassAudioAuthentication
         {
@@ -146,16 +146,14 @@ namespace YapYapLocalMultiplayer
                     return true;
                 }
 
-                var settings = ScriptableObject.CreateInstance<PhotonAppSettings>();
-                settings.AppSettings = new Photon.Realtime.AppSettings()
+                PhotonAppSettings.instance = ScriptableObject.CreateInstance<PhotonAppSettings>();
+                PhotonAppSettings.instance.AppSettings = new Photon.Realtime.AppSettings()
                 {
                     AppIdVoice = appID,
                     AuthMode = Photon.Realtime.AuthModeOption.Auth,
                     EnableProtocolFallback = true,
                     Protocol = ExitGames.Client.Photon.ConnectionProtocol.Udp
                 };
-
-                Traverse.Create(typeof(PhotonAppSettings)).Field("instance").SetValue(settings);
 
                 Log.LogMessage($"Photon Voice Server settings overwritten to use custom app id - {appID}");
                 return false;
