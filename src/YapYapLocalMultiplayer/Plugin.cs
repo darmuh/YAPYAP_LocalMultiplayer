@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -66,6 +68,21 @@ namespace YapYapLocalMultiplayer
             ToggleNetworkUI = Config.Bind("Settings", "Toggle NetworkDebug UI", KeyCode.Equals, new ConfigDescription("Set this to the key that you wish to use to toggle the Network Debug UI"));
         }
 
+        private void Update()
+        {
+            if (UINetworkInstance == null)
+                return;
+
+            if (Input.GetKeyDown(ToggleNetworkUI.Value))
+            {
+                var mainPanelComp = Traverse.Create(UINetworkInstance).Field("mainPanel").GetValue<Component>();
+                if (mainPanelComp != null)
+                {
+                    mainPanelComp.gameObject.SetActive(!mainPanelComp.gameObject.activeSelf);
+                }
+            }
+        }
+
         private static bool TryGetAppID(out string appID)
         {
             appID = string.Empty;
@@ -83,13 +100,27 @@ namespace YapYapLocalMultiplayer
             return true;
         }
 
-        [HarmonyPatch(typeof(CoreFsmYap), nameof(CoreFsmYap.Setup))]
+        [HarmonyPatch(typeof(YapFsm), nameof(YapFsm.Initialise))]
         public class FsmYapHook
         {
-            public static void Postfix(CoreFsmYap __instance)
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                __instance._initSteam = false;
-                __instance._startHost = false;
+                var codes = new List<CodeInstruction>(instructions);
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (codes[i].opcode == OpCodes.Stfld)
+                    {
+                        var field = codes[i].operand as FieldInfo;
+                        if (field != null && (field.Name == "_initSteam" || field.Name == "_startHost"))
+                        {
+                            if (i > 0 && codes[i - 1].opcode == OpCodes.Ldc_I4_1)
+                            {
+                                codes[i - 1].opcode = OpCodes.Ldc_I4_0;
+                            }
+                        }
+                    }
+                }
+                return codes;
             }
         }
 
@@ -100,21 +131,6 @@ namespace YapYapLocalMultiplayer
             {
                 UINetworkInstance = __instance;
                 Cursor.lockState = CursorLockMode.None;
-            }
-        }
-
-        [HarmonyPatch(typeof(UIPlayer), nameof(UIPlayer.Update))]
-        public class KeyListenerHook
-        {
-            public static void Postfix()
-            {
-                if (UINetworkInstance == null)
-                    return;
-
-                if (Input.GetKeyDown(ToggleNetworkUI.Value))
-                {
-                    UINetworkInstance.mainPanel.gameObject.SetActive(!UINetworkInstance.mainPanel.gameObject.activeSelf);
-                }
             }
         }
 
@@ -130,8 +146,8 @@ namespace YapYapLocalMultiplayer
                     return true;
                 }
 
-                PhotonAppSettings.instance = ScriptableObject.CreateInstance<PhotonAppSettings>();
-                PhotonAppSettings.instance.AppSettings = new()
+                var settings = ScriptableObject.CreateInstance<PhotonAppSettings>();
+                settings.AppSettings = new Photon.Realtime.AppSettings()
                 {
                     AppIdVoice = appID,
                     AuthMode = Photon.Realtime.AuthModeOption.Auth,
@@ -139,11 +155,11 @@ namespace YapYapLocalMultiplayer
                     Protocol = ExitGames.Client.Photon.ConnectionProtocol.Udp
                 };
 
+                Traverse.Create(typeof(PhotonAppSettings)).Field("instance").SetValue(settings);
+
                 Log.LogMessage($"Photon Voice Server settings overwritten to use custom app id - {appID}");
                 return false;
             }
-
-            
         }
     }
 }
