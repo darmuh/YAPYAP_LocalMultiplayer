@@ -19,6 +19,8 @@ namespace YapYapLocalMultiplayer
         internal static ManualLogSource Log { get; private set; } = null!;
         internal static ConfigEntry<string> VoiceAppID = null!;
         internal static ConfigEntry<KeyCode> ToggleNetworkUI = null!;
+        internal static ConfigEntry<bool> SpoofPlayerID = null!;
+        private static Guid SpoofedUniqueID = Guid.NewGuid();
         private static string _voiceAppID = string.Empty;
         internal static string GetAppID
         {
@@ -63,9 +65,10 @@ namespace YapYapLocalMultiplayer
         {
             Log = Logger;
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
-            Log.LogMessage($"Plugin {Name} is loaded!");
+            Log.LogMessage($"Plugin {Name} is loaded with version {Version}!");
             VoiceAppID = Config.Bind("Settings", "Voice App ID", "", new ConfigDescription("The App ID of your custom Photon Voice Application\nChanging this mid-game will require a return to main menu for changes to take effect"));
             ToggleNetworkUI = Config.Bind("Settings", "Toggle NetworkDebug UI", KeyCode.Equals, new ConfigDescription("Set this to the key that you wish to use to toggle the Network Debug UI"));
+            SpoofPlayerID = Config.Bind("Settings", "Spoof Player ID", false, "When enabled, this will attempt to spoof the player id with a system guid that is generated on game start");
         }
 
         private static bool TryGetAppID(out string appID)
@@ -107,6 +110,19 @@ namespace YapYapLocalMultiplayer
                     }
                 }
                 return codes;
+            }
+        }
+
+        [HarmonyPatch(typeof(GameController), nameof(GameController.SetPlayerId))]
+        public class InterceptPlayerID
+        {
+            public static void Prefix(ref string playerId)
+            {
+                if (!SpoofPlayerID.Value)
+                    return;
+
+                playerId = SpoofedUniqueID.ToString();
+                Log.LogDebug($"Spoofed playerId - {playerId}");
             }
         }
 
